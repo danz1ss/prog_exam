@@ -10,7 +10,7 @@ from constants import *
 
 
 def update_collision():  # обрабатывает коллизию (ушло 4 дня)
-    global move_left, move_right, jump_velocity, gravity_flag, running, background_y, background_x  # да, да-да, да, не осуждайте
+    global move_left, move_right, jump_velocity, gravity_flag, running, background_y, background_x, jump_count  # да, да-да, да, не осуждайте
     x_direction = None  # так надо, чтоб потом проверять
     movement = move_left + move_right  # направление, куда идёт игрок
     player.rect.x += movement  # игрок идёт
@@ -182,6 +182,17 @@ def object_update():  # передвижения объектов, чтобы б
         exit_.rect.y -= 7
 
 
+def draw_jump_counter(window, jump_count):
+    """Отрисовывает счётчик прыжков в правом верхнем углу экрана"""
+    font = pygame.font.Font(None, 36)  # размер шрифта
+    text_color = (255, 255, 255)  # белый цвет
+    counter_text = f"Прыжки: {jump_count}"
+    text_surface = font.render(counter_text, True, text_color)
+    text_rect = text_surface.get_rect()
+    text_rect.topright = (590, 10)  # позиция в правом верхнем углу
+    window.blit(text_surface, text_rect)
+
+
 if __name__ == "__main__":
     pygame.init()  # инициализация всего
 
@@ -227,6 +238,7 @@ if __name__ == "__main__":
         )  # определяем грани камеры
         running = True
         jump_velocity = 0
+        jump_count = 0  # счётчик прыжков
         while running:
             # запихиваем задник
             main_window.blit(background, (background_x, background_y))
@@ -265,6 +277,7 @@ if __name__ == "__main__":
                             for land in objects
                         ):
                             jump_velocity = -GRAVITY * 2.5  # значение прыжка
+                            jump_count += 1  # увеличиваем счётчик прыжков
                     if event.key == pygame.K_RETURN:
                         for (
                             interactive_object
@@ -331,6 +344,7 @@ if __name__ == "__main__":
             all_sprites.draw(main_window)
             manager.draw_ui(main_window)
             indicator.draw_condition_circles()
+            draw_jump_counter(main_window, jump_count)
 
             pygame.display.update()
             clock.tick(60)
