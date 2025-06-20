@@ -6,8 +6,7 @@ from random import choice, randrange
 from screens import end_screen, start_screen  # приколы из других py файлов
 from classes_modules import *
 from level_parser import parse_level
-
-GRAVITY = 15  # гравитация, почему 15? По приколу
+from constants import *
 
 
 def update_collision():  # обрабатывает коллизию (ушло 4 дня)
@@ -69,7 +68,7 @@ def update_collision():  # обрабатывает коллизию (ушло 4
                                         x_direction = -70  # влево на 70+
                                 if (
                                     x_direction
-                                ):  # если мы провели предыдущие проверки,то должно быть
+                                ):  # если мы провели предыдущие проверки, то должно быть
                                     player_x, player_y = (
                                         portal.rect.x - player.rect.x + x_direction,
                                         player.rect.y - portal.rect.y,
@@ -164,7 +163,7 @@ def object_update():  # передвижения объектов, чтобы б
 
     if (
         player.rect.y + 1 <= camera_rect.y
-    ):  # тут уже просчёт по у, но порталы не очень дружат с паралаксом по н, по этому здесь мы фон не двигаем
+    ):  # тут уже просчёт по у, но порталы не очень дружат с паралаксом по вертикали, по этому здесь мы фон не двигаем
         player.rect.y = camera_rect.y
         for game_object in objects:
             game_object.rect.y += 7

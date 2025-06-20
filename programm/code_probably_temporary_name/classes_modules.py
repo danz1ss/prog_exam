@@ -2,6 +2,7 @@ import sys
 import os
 import pygame
 import pygame_gui
+from constants import *
 
 # константы экрана
 SCREEN_SIZE = SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
@@ -26,36 +27,44 @@ def load_image(filename, colorkey=None):  # функция загрузки ка
     return loaded_image
 
 
+def load_and_scale_image(filename, size, folder="objects"):
+    """
+    Утилитная функция для загрузки и масштабирования изображений.
+    Устраняет дублирование кода.
+    """
+    image_path = f"{folder}/{filename}"
+    image = load_image(image_path)
+    return pygame.transform.smoothscale(image, size)
+
+
 class Land(pygame.sprite.Sprite):  # платформа
     def __init__(self, image_name, pos_x, pos_y, platform_width, platform_height):
         super().__init__(all_sprites)
         self.rect = pygame.Rect(pos_x, pos_y, platform_width, platform_height)
-        self.image = pygame.transform.smoothscale(
-            load_image(f"fons/{image_name}"), self.rect.size
-        )
+        self.image = load_and_scale_image(image_name, self.rect.size, "fons")
         self.mask = pygame.mask.from_surface(self.image)
 
 
 class Player(pygame.sprite.Sprite):  # игрок
     def __init__(self, image_name, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
-        self.idle_image = pygame.transform.smoothscale(
-            load_image(f"objects/{image_name}"), (64, 64)
-        )
+        self.idle_image = load_and_scale_image(image_name, (PLAYER_SIZE, PLAYER_SIZE))
         self.image = self.idle_image
         self.orientation = 1
         self.current_frame = 0
         self.run_animation_frames = []
         self.fall_animation_frames = []
         self.animation_status = "idle"
-
         # анимации
         self.cut_animation_sheet(
-            load_image(f"objects/tinkoff_run.png"), 20, 1, self.run_animation_frames
+            load_image("objects/tinkoff_run.png"),
+            PLAYER_RUN_FRAMES,
+            1,
+            self.run_animation_frames,
         )
         self.cut_animation_sheet(
-            load_image(f"objects/tinkoff_fall_from_stratosphere.png"),
-            10,
+            load_image("objects/tinkoff_fall_from_stratosphere.png"),
+            PLAYER_FALL_FRAMES,
             1,
             self.fall_animation_frames,
         )
@@ -86,6 +95,9 @@ class Player(pygame.sprite.Sprite):  # игрок
         self.image = self.run_animation_frames[self.current_frame]
         if self.orientation < 0:
             self.image = pygame.transform.flip(self.image, True, False)
+        self.mask = pygame.mask.from_surface(
+            self.image
+        )  # обновляем маску при смене кадра!
         self.current_frame = (self.current_frame + 1) % len(self.run_animation_frames)
 
     def update_fall_animation(self):  # анимация падения
@@ -96,21 +108,21 @@ class Player(pygame.sprite.Sprite):  # игрок
         self.image = self.fall_animation_frames[self.current_frame]
         if self.orientation < 0:
             self.image = pygame.transform.flip(self.image, True, False)
+        self.mask = pygame.mask.from_surface(self.image)  # обновляем маску!
         self.current_frame = (self.current_frame + 1) % len(self.fall_animation_frames)
 
     def update_idle_animation(self):  # анимация спокойствия
         self.image = self.idle_image
         if self.orientation < 0:
             self.image = pygame.transform.flip(self.image, True, False)
+        self.mask = pygame.mask.from_surface(self.image)  # Обновляем маску!
 
 
 class Wall(pygame.sprite.Sprite):  # стенки
     def __init__(self, image_name, pos_x, pos_y, wall_width, wall_height):
         super().__init__(all_sprites)
         self.rect = pygame.Rect(pos_x, pos_y, wall_width, wall_height)
-        self.image = pygame.transform.smoothscale(
-            load_image(f"fons/{image_name}"), self.rect.size
-        )
+        self.image = load_and_scale_image(image_name, self.rect.size, "fons")
         self.mask = pygame.mask.from_surface(self.image)
 
 
@@ -120,13 +132,11 @@ class Lever(pygame.sprite.Sprite):  # рычаг
     ):
         super().__init__(all_sprites)
         self.lever_sound = pygame.mixer.Sound("../assets/sounds/lever_sound.mp3")
-        self.lever_sound.set_volume(0.3)
-        # меняет определённые значения в выходе, чтобы вышли своего рода пятнашки
+        self.lever_sound.set_volume(LEVER_VOLUME)
+        # меняет определённые значения в выходе
         self.switch_conditions = switch_conditions
         self.rect = pygame.Rect(pos_x, pos_y, lever_width, lever_height)
-        self.image = pygame.transform.smoothscale(
-            load_image(f"objects/{image_name}"), self.rect.size
-        )
+        self.image = load_and_scale_image(image_name, self.rect.size)
         self.mask = pygame.mask.from_surface(self.image)
 
     def activate_touch_animation(self):  # анимация переключения
@@ -149,9 +159,7 @@ class Exit(pygame.sprite.Sprite):  # выход
         self.exit_conditions = [False for i in range(condition_count)]
         self.is_exit_available = False
         self.rect = pygame.Rect(pos_x, pos_y, exit_width, exit_height)
-        self.image = pygame.transform.smoothscale(
-            load_image(f"objects/{image_name}"), self.rect.size
-        )
+        self.image = load_and_scale_image(image_name, self.rect.size)
         self.mask = pygame.mask.from_surface(self.image)
 
     def check_all_conditions_completed(self):  # если всё выполнено, то можно выйти
@@ -167,12 +175,10 @@ class Portal(pygame.sprite.Sprite):  # портал
         self.portal_id = portal_id  # есть свой id
         self.target_portal_id = target_portal_id  # и id другого портала
         self.portal_sound = pygame.mixer.Sound("../assets/sounds/portal.mp3")
-        self.portal_sound.set_volume(0.05)
+        self.portal_sound.set_volume(PORTAL_VOLUME)
         self.portal_direction = portal_direction  # направление, куда смотрит
-        self.rect = pygame.Rect(pos_x, pos_y, 64, 128)
-        self.image = pygame.transform.smoothscale(
-            load_image(f"objects/{image_name}"), self.rect.size
-        )
+        self.rect = pygame.Rect(pos_x, pos_y, PORTAL_WIDTH, PORTAL_HEIGHT)
+        self.image = load_and_scale_image(image_name, self.rect.size)
         # картинку переворачиваем если надо
         if self.portal_direction == "right":
             self.image = pygame.transform.flip(self.image, True, False)
@@ -186,15 +192,14 @@ class Indicator:  # кружочки слева сверху
         self.indicator_colors = {True: "green", False: "red"}
 
     def draw_condition_circles(self):
-        circle_x_offset = 42
         for condition_index in range(len(self.indicator_conditions)):
             pygame.draw.circle(
                 self.game_screen,
                 pygame.Color(
                     self.indicator_colors[self.indicator_conditions[condition_index]]
                 ),
-                (circle_x_offset * (condition_index + 1), 30),
-                20,
+                (INDICATOR_CIRCLE_OFFSET * (condition_index + 1), INDICATOR_Y_POSITION),
+                INDICATOR_CIRCLE_RADIUS,
             )
 
 
@@ -203,4 +208,3 @@ horizontal_borders = pygame.sprite.Group()
 all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
-player_image = pygame.transform.scale(load_image("objects/lico.jpg"), (64, 64))

@@ -3,6 +3,7 @@ import sys
 import pygame
 import pygame_gui
 from level_parser import load_image
+from constants import *
 
 
 def start_screen():  # экран старта с кнопочками, я писал с видеоуроков яндекса, сам не особо что помню куда и как
@@ -47,23 +48,25 @@ def start_screen():  # экран старта с кнопочками, я пи�
                 if event.type == pygame.USEREVENT:  # если почалось
                     if event.user_type == pygame_gui.UI_CONFIRMATION_DIALOG_CONFIRMED:
                         pygame.quit()
+                        sys.exit()  # sys.exit() для корректного завершения
                     if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
                         if event.ui_element == start_button:
                             start_button.hide()
                             return 0
-                        if event.ui_element == exit_button:
-                            pygame.quit()
-                            sys.exit()
+                    if event.ui_element == exit_button:
+                        pygame.quit()
+                        sys.exit()
                 manager.process_events(event)
             manager.update(time_delta1)
             screen.blit(fon, (0, 0))
-            text_coord = 100
+            text_coord = MENU_TEXT_START_Y
             for line in intro_text:
                 string_rendered = font.render(line, 1, pygame.Color("black"))
                 intro_rect = string_rendered.get_rect()
-                text_coord += 10
+                text_coord += MENU_TEXT_SPACING
                 intro_rect.top = text_coord
-                intro_rect.x = 60 - len(line) * 4
+                # более точное центрирование текста
+                intro_rect.centerx = MENU_WIDTH // 2
                 text_coord += intro_rect.height
                 screen.blit(string_rendered, intro_rect)
             manager.draw_ui(screen)
