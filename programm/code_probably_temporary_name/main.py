@@ -182,15 +182,106 @@ def object_update():  # передвижения объектов, чтобы б
         exit_.rect.y -= 7
 
 
-def draw_jump_counter(window, jump_count):
-    """Отрисовывает счётчик прыжков в правом верхнем углу экрана"""
+def draw_jump_counter(window, jump_count, player, player_objects, game_objects):
+    """Отрисовывает счётчик прыжков и расстояние до рычага в правом верхнем углу экрана"""
     font = pygame.font.Font(None, 36)  # размер шрифта
     text_color = (255, 255, 255)  # белый цвет
+
+    # Счётчик прыжков
     counter_text = f"Прыжки: {jump_count}"
     text_surface = font.render(counter_text, True, text_color)
     text_rect = text_surface.get_rect()
     text_rect.topright = (590, 10)  # позиция в правом верхнем углу
-    window.blit(text_surface, text_rect)
+    window.blit(text_surface, text_rect)  # Расстояние до ближайшего рычага
+    lever_distance = get_nearest_lever_distance(player, player_objects, game_objects)
+    if lever_distance is not None:
+        # lever_distance уже в тайлах
+        distance_text = f"Рычаг: {lever_distance} tiles"
+    else:
+        distance_text = "Рычаг: недоступен"
+
+    distance_surface = font.render(distance_text, True, text_color)
+    distance_rect = distance_surface.get_rect()
+    distance_rect.topright = (590, 50)  # позиция под счётчиком прыжков
+    window.blit(distance_surface, distance_rect)
+
+
+def get_nearest_lever_distance(player, player_objects, game_objects):
+    """Вычисляет расстояние до ближайшего рычага"""
+    if not player_objects:
+        return None
+
+    # получаем позицию игрока в "тайлах" (32 пикселя = 1 тайл)
+    player_tile_x = player.rect.x // 32
+    player_tile_y = player.rect.y // 32
+
+    min_distance = float("inf")
+
+    # проходим по всем рычагам
+    for obj in player_objects:
+        if hasattr(obj, "switch_conditions"):  # проверяем что это рычаг
+            lever_tile_x = obj.rect.x // 32
+            lever_tile_y = obj.rect.y // 32
+
+            # Используем BFS для поиска пути
+            distance = path_find(
+                player_tile_x, player_tile_y, lever_tile_x, lever_tile_y, game_objects
+            )
+
+            if distance is not None and distance < min_distance:
+                min_distance = distance
+
+    return (
+        min_distance if min_distance != float("inf") else None
+    )  # возвращаем уже в тайлах!
+
+
+def path_find(start_x, start_y, target_x, target_y, game_objects):
+    """Поиска кратчайшего пути"""
+    from collections import deque
+
+    # очередь: (x, y, расстояние)
+    queue = deque([(start_x, start_y, 0)])
+    visited = set()
+    visited.add((start_x, start_y))
+
+    # направления движения: вправо, влево, вверх, вниз
+    directions = [(1, 0), (-1, 0), (0, -1), (0, 1)]
+
+    while queue:
+        current_x, current_y, distance = queue.popleft()
+
+        # цель обнуружена
+        if current_x == target_x and current_y == target_y:
+            return distance
+
+        # проверяем все 4 направления
+        for dx, dy in directions:
+            new_x = current_x + dx
+            new_y = current_y + dy
+
+            # Проверяем границы экрана
+            if 0 <= new_x < 47 and 0 <= new_y < 19:  # 1500/32=47, 600/32=19
+                if (new_x, new_y) not in visited:
+                    # Проверяем, нет ли препятствия
+                    if not is_obstacle(new_x * 32, new_y * 32, game_objects):
+                        visited.add((new_x, new_y))
+                        queue.append((new_x, new_y, distance + 1))
+
+    return None  # путь не найден
+
+
+def is_obstacle(pixel_x, pixel_y, game_objects):
+    # временный прямоугольник для проверки
+    test_rect = pygame.Rect(pixel_x, pixel_y, 32, 32)
+
+    # проверка на столкновение со всеми объектами
+    for obj in game_objects:
+        if isinstance(obj, (Wall, Land)):  # стены и платформы = препятствия
+            if test_rect.colliderect(obj.rect):
+                return True
+
+    return False
 
 
 if __name__ == "__main__":
@@ -344,7 +435,7 @@ if __name__ == "__main__":
             all_sprites.draw(main_window)
             manager.draw_ui(main_window)
             indicator.draw_condition_circles()
-            draw_jump_counter(main_window, jump_count)
+            draw_jump_counter(main_window, jump_count, player, player_objects, objects)
 
             pygame.display.update()
             clock.tick(60)

@@ -9,7 +9,7 @@ S 1st_level_fon_sky.jpg
 / 1100 80 50 50 1 4 5 lever.png
 / 1250 80 50 50 5 lever.png
 / 1070 270 50 50 2 3 lever.png
-/ 200 510 50 50 2 lever.png
+/ 240 510 50 50 2 lever.png
 E 960 400 160 200 7 test_exit.png
 . 0 560 tinkoff_idle.png
 | 1500 -500 250 1100 stone_wall.png

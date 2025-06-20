@@ -13,7 +13,6 @@ screen.fill("white")
 def load_image(filename, colorkey=None):  # функция загрузки картинки
     full_path = os.path.join("../assets", filename)
     if not os.path.isfile(full_path):
-        print(f"Файл с изображением '{full_path}' не найден")
         sys.exit()
 
     loaded_image = pygame.image.load(full_path)
